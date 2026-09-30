@@ -1331,133 +1331,100 @@ end
 
 function VCB_BF_GetDuration(timeLeft)
 	if VCB_IS_LOADED then
-		local suffix = {
-			[1] = " s",
-			[2] = " m",
-			[3] = " h"
-		}
+		-- 1. Setup Suffixes
+		local suffix = { [1] = " s", [2] = " m", [3] = " h" }
 		if VCB_SAVE["Timer_disableUnit"] then
-			suffix = {
-				[1] = "",
-				[2] = "",
-				[3] = ""
-			}
+			suffix = { [1] = "", [2] = "", [3] = "" }
 		end
+
+		-- 2. Helper for Rounding (Up/Down) based on settings
+		local function getVal(val)
+			if VCB_SAVE["Timer_round"] then 
+				return math.ceil(val) 
+			else 
+				return math.floor(val) 
+			end
+		end
+
+		-- 3. Logic
 		if VCB_SAVE["Timer_minutes"] and timeLeft > 60 then
+			-- TIME > 1 MINUTE
+			
 			if VCB_SAVE["Timer_hours"] and timeLeft > 3600 then
+				-- TIME > 1 HOUR
+				local h = getVal(timeLeft / 3600)
+				local m = math.floor(math.mod(timeLeft, 3600) / 60)
+				local s = math.mod(timeLeft, 60)
+
 				if VCB_SAVE["Timer_hours_convert"] then
 					if VCB_SAVE["Timer_minutes_convert"] then
-						if VCB_SAVE["Timer_round"] then
-							return floor(timeLeft/3600)..":"..ceil(timeLeft)-3600*ceil(timeLeft/3600)..":"..ceil(timeLeft)-60*ceil(timeLeft/60)..suffix[3]
-						else
-							return floor(timeLeft/3600)..":"..floor(timeLeft)-3600*floor(timeLeft/3600)..":"..floor(timeLeft)-60*floor(timeLeft/60)..suffix[3]
-						end
+						-- Format: H:MM:SS
+						return string.format("%d:%02d:%02d%s", h, m, s, suffix[3])
 					else
-						if VCB_SAVE["Timer_round"] then
-							return floor(timeLeft/3600)..":"..ceil(timeLeft)-3600*ceil(timeLeft/3600)..suffix[3]
-						else
-							return floor(timeLeft/3600)..":"..floor(timeLeft)-3600*floor(timeLeft/3600)..suffix[3]
-						end
+						-- Format: H:MM
+						return string.format("%d:%02d%s", h, m, suffix[3])
 					end
 				else
 					if VCB_SAVE["Timer_minutes_convert"] then
-						if VCB_SAVE["Timer_round"] then
-							return floor(timeLeft/60)..":"..ceil(timeLeft)-60*ceil(timeLeft/60)..suffix[3]
-						else
-							return floor(timeLeft/60)..":"..floor(timeLeft)-60*floor(timeLeft/60)..suffix[3]
-						end
+						-- Format: MM:SS (Total minutes)
+						local totalMin = getVal(timeLeft / 60)
+						s = math.mod(timeLeft, 60)
+						return string.format("%d:%02d%s", totalMin, s, suffix[3])
 					else
-						if VCB_SAVE["Timer_round"] then
-							return ceil(timeLeft/3600)..suffix[3]
-						else
-							return floor(timeLeft/3600)..suffix[3]
-						end
+						-- Format: H (Just hours)
+						return h..suffix[3]
 					end
 				end
 			else
+				-- TIME < 1 HOUR (But > 60s)
+				local m = getVal(timeLeft / 60)
+				local s = math.mod(timeLeft, 60)
+
 				if VCB_SAVE["Timer_minutes_convert"] then
 					if VCB_SAVE["Timer_hours_convert"] then
-						if VCB_SAVE["Timer_round"] then
-							return "0:"..ceil(timeLeft/60)..":"..ceil(timeLeft)-60*ceil(timeLeft/60)..suffix[3]
-						else
-							return "0:"..floor(timeLeft/60)..":"..floor(timeLeft)-60*floor(timeLeft/60)..suffix[3]
-						end
+						-- Format: 0:MM:SS (Ghost Hour)
+						return string.format("0:%02d:%02d%s", m, s, suffix[3])
 					else
-						if VCB_SAVE["Timer_round"] then
-							return ceil(timeLeft/60)..":"..ceil(timeLeft)-60*ceil(timeLeft/60)..suffix[2]
-						else
-							return floor(timeLeft/60)..":"..floor(timeLeft)-60*floor(timeLeft/60)..suffix[2]
-						end
+						-- Format: M:SS
+						return string.format("%d:%02d%s", m, s, suffix[2])
 					end
 				else
 					if VCB_SAVE["Timer_hours_convert"] then
-						if VCB_SAVE["Timer_round"] then
-							return "0:"..ceil(timeLeft/60)..suffix[3]
-						else
-							return "0:"..floor(timeLeft/60)..suffix[3]
-						end
+						-- Format: 0:MM (Ghost Hour)
+						return string.format("0:%02d%s", m, suffix[3])
 					else
-						if VCB_SAVE["Timer_round"] then
-							return ceil(timeLeft/60)..suffix[2]
-						else
-							return floor(timeLeft/60)..suffix[2]
-						end
+						-- Format: M (Just minutes)
+						return m..suffix[2]
 					end
 				end
 			end
 		else
+			-- TIME < 60 SECONDS
+			local s = timeLeft
+			
 			if VCB_SAVE["Timer_minutes_convert"] then
-				if timeLeft >=10 then
-					if VCB_SAVE["Timer_tenth"] then
-						if VCB_SAVE["Timer_round"] then
-							return "0:"..ceil(timeLeft)..":"..100*timeLeft-100*floor(timeLeft)..suffix[2]
-						else
-							return "0:"..floor(timeLeft)..":"..100*timeLeft-100*floor(timeLeft)..suffix[2]
-						end
-					else
-						if VCB_SAVE["Timer_round"] then
-							return "0:"..ceil(timeLeft)..suffix[2]
-						else
-							return "0:"..floor(timeLeft)..suffix[2]
-						end
-					end
+				-- Format: 0:SS
+				if VCB_SAVE["Timer_tenth"] then
+					return string.format("0:%04.1f%s", s, suffix[2]) -- 0:05.5
 				else
-					if VCB_SAVE["Timer_tenth"] then
-						if VCB_SAVE["Timer_round"] then
-							return "0:0"..ceil(timeLeft)..":"..ceil(100*timeLeft-100*floor(timeLeft))..suffix[2]
-						else
-							return "0:0"..floor(timeLeft)..":"..floor(100*timeLeft-100*floor(timeLeft))..suffix[2]
-						end
-					else
-						if VCB_SAVE["Timer_round"] then
-							return "0:0"..ceil(timeLeft)..suffix[2]
-						else
-							return "0:0"..floor(timeLeft)..suffix[2]
-						end
-					end
+					return string.format("0:%02d%s", s, suffix[2])   -- 0:05
 				end
 			else
+				-- Format: SS (Just seconds)
 				if VCB_SAVE["Timer_tenth"] then
-					if VCB_SAVE["Timer_round"] then
-						return ceil(timeLeft)..":"..ceil(100*timeLeft-100*floor(timeLeft))..suffix[1]
-					else
-						return floor(timeLeft)..":"..floor(100*timeLeft-100*floor(timeLeft))..suffix[1]
-					end
+					return string.format("%.1f%s", s, suffix[1])
 				else
-					if VCB_SAVE["Timer_round"] then
-						return ceil(timeLeft)..suffix[1]
-					else
-						return floor(timeLeft)..suffix[1]
-					end
+					return getVal(s)..suffix[1]
 				end
 			end
 		end
 	else
+		-- Fallback if VCB not loaded
 		if suffix then
 			if timeLeft > 60 then
-				return floor(timeLeft/60)..suffix[2]
+				return math.floor(timeLeft/60)..suffix[2]
 			else
-				return floor(timeLeft)..suffix[1]
+				return math.floor(timeLeft)..suffix[1]
 			end
 		end
 	end

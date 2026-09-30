@@ -128,18 +128,34 @@ function VCB_BF_BUFF_BUTTON_Update(button)
 		if Consolidated_Buffs ~= nil and button:GetParent() ~= VCB_BF_DEBUFF_FRAME and (not VCB_SAVE["MISC_disable_CF"]) then
 			for e = 1, VCB_tablelength(Consolidated_Buffs) do
 				if not Consolidated_Buffs[e] or name == nil then break end
-				if strfind(strlower(Consolidated_Buffs[e]), strlower(name)) then
+				if strfind(strlower(Consolidated_Buffs[e]), strlower(name), 1, true) then
 					button:SetParent(VCB_BF_CONSOLIDATED_BUFFFRAME)
 					break
 				end
 			end
 		end
 		
+		-- Combat frame buffs go to their own frame, ahead of the consolidated one
+		button.combatName = nil
+		if button.cat == "buff" and buffIndex >= 0 and name and VCB_COMBAT_BUFFS then
+			local lname = strlower(name)
+			for _, listed in ipairs(VCB_COMBAT_BUFFS) do
+				if strlower(listed) == lname then
+					button:SetParent(VCB_BF_COMBAT_FRAME)
+					button.combatName = lname
+					if VCB_EXTRA and VCB_EXTRA["combat_icons"] then
+						VCB_EXTRA["combat_icons"][lname] = GetPlayerBuffTexture(buffIndex)
+					end
+					break
+				end
+			end
+		end
+
 		-- Banned Buffs implementation
 		if Banned_Buffs ~= nil and (not VCB_SAVE["MISC_disable_BB"]) then
 			for p = 1, VCB_tablelength(Banned_Buffs) do
 				if not Banned_Buffs[p] or name == nil then break end
-				if ( strfind(strlower(Banned_Buffs[p]), strlower(name)) ) then
+				if ( strfind(strlower(Banned_Buffs[p]), strlower(name), 1, true) ) then
 					CancelPlayerBuff(button.buffIndex)
 					VCB_SendMessage(name..VCB_HAS_BEEN_CANCELLED)
 					break
@@ -177,7 +193,7 @@ function VCB_BF_BUFF_BUTTON_Update(button)
 			if VCB_IS_LOADED and button.cat == "buff" then
 				if VCB_SAVE["CF_AURA_enableborder"] and button:GetParent() == VCB_BF_CONSOLIDATED_BUFFFRAME then
 					color = {r=VCB_SAVE["CF_AURA_bordercolor_r"], g=VCB_SAVE["CF_AURA_bordercolor_r"], b=VCB_SAVE["CF_AURA_bordercolor_r"], a=VCB_SAVE["CF_AURA_borderopacity"]}
-				elseif VCB_SAVE["BF_BORDER_enableborder"] and button:GetParent() == VCB_BF_BUFF_FRAME then
+				elseif VCB_SAVE["BF_BORDER_enableborder"] and (button:GetParent() == VCB_BF_BUFF_FRAME or button:GetParent() == VCB_BF_COMBAT_FRAME) then
 					color = {r=VCB_SAVE["BF_BORDER_bordercolor_r"], g=VCB_SAVE["BF_BORDER_bordercolor_g"], b=VCB_SAVE["BF_BORDER_bordercolor_b"], a=VCB_SAVE["BF_BORDER_borderopacity"]}
 				end
 			end
@@ -208,6 +224,70 @@ function VCB_BF_BUFF_BUTTON_Update(button)
 	end
 end
 
+-- Styling shared by the main buff frame and the listed-buffs frame
+function VCB_BF_StyleBuffButton(button, timeLeft)
+	local name = button:GetName()
+	local buttonDuration = getglobal(name.."Duration")
+	local buttonBorder = getglobal(name.."Border")
+	local buttonIcon = getglobal(name.."Icon")
+	local buttonCount = getglobal(name.."Count")
+	
+	buttonDuration:ClearAllPoints()
+	buttonDuration:SetPoint("TOPLEFT", button, "BOTTOMLEFT", -20, VCB_SAVE["Timer_yoffset"])
+	buttonDuration:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 20, VCB_SAVE["Timer_yoffset"])
+	if VCB_SAVE["Timer_usecfont"] then
+		if VCB_SAVE["BF_TIMER_border"] then
+			buttonDuration:SetFont(VCB_SAVE["Timer_customfont"], VCB_SAVE["BF_TIMER_fontsize"], "OUTLINE")
+		else
+			buttonDuration:SetFont(VCB_SAVE["Timer_customfont"], VCB_SAVE["BF_TIMER_fontsize"])
+		end
+
+	else
+		if VCB_SAVE["BF_TIMER_border"] then
+			buttonDuration:SetFont(VCB_SAVE["Timer_font"], VCB_SAVE["BF_TIMER_fontsize"], "OUTLINE")
+		else
+			buttonDuration:SetFont(VCB_SAVE["Timer_font"], VCB_SAVE["BF_TIMER_fontsize"])
+		end
+	end
+	if VCB_SAVE["Timer_below_60"] and timeLeft < 60 then
+		buttonDuration:SetTextColor(VCB_SAVE["Timer_below_60_color_r"],VCB_SAVE["Timer_below_60_color_g"],VCB_SAVE["Timer_below_60_color_b"],VCB_SAVE["BF_TIMER_fontopacity"])
+	else
+		buttonDuration:SetTextColor(VCB_SAVE["BF_TIMER_fontcolor_r"],VCB_SAVE["BF_TIMER_fontcolor_g"],VCB_SAVE["BF_TIMER_fontcolor_b"],VCB_SAVE["BF_TIMER_fontopacity"])
+	end
+	if VCB_SAVE["BF_GENERAL_enablebgcolor"] then
+		buttonIcon:SetVertexColor(VCB_SAVE["BF_GENERAL_bgcolor_r"],VCB_SAVE["BF_GENERAL_bgcolor_g"],VCB_SAVE["BF_GENERAL_bgcolor_b"],VCB_SAVE["BF_GENERAL_bgopacity"])
+	else
+		buttonIcon:SetVertexColor(1,1,1,VCB_SAVE["BF_GENERAL_bgopacity"])
+	end
+	if VCB_SAVE["BF_BORDER_enableborder"] then
+		buttonBorder:SetTexture(nil)
+		if VCB_SAVE["BF_BORDER_usecustomborder"] then
+			buttonBorder:SetTexture(VCB_SAVE["BF_BORDER_customborderpath"])
+		else
+			buttonBorder:SetTexture(VCB_AURABORDER_ARRAY[VCB_SAVE["BF_BORDER_border"]])
+		end
+		buttonBorder:SetVertexColor(VCB_SAVE["BF_BORDER_bordercolor_r"],VCB_SAVE["BF_BORDER_bordercolor_g"],VCB_SAVE["BF_BORDER_bordercolor_b"],VCB_SAVE["BF_BORDER_borderopacity"])
+	else
+		buttonBorder:SetTexture(nil)
+	end
+	if VCB_SAVE["BF_GENERAL_usecfont"] then
+		if VCB_SAVE["BF_GENERAL_enableborder"] then
+			buttonCount:SetFont(VCB_SAVE["BF_GENERAL_customfont"], VCB_SAVE["BF_GENERAL_fontsize"], "OUTLINE")
+		else
+			buttonCount:SetFont(VCB_SAVE["BF_GENERAL_customfont"], VCB_SAVE["BF_GENERAL_fontsize"])
+		end
+	else
+		if VCB_SAVE["BF_GENERAL_enableborder"] then
+			buttonCount:SetFont(VCB_SAVE["BF_GENERAL_font"], VCB_SAVE["BF_GENERAL_fontsize"], "OUTLINE")
+		else
+			buttonCount:SetFont(VCB_SAVE["BF_GENERAL_font"], VCB_SAVE["BF_GENERAL_fontsize"])
+		end
+	end
+	buttonCount:SetVertexColor(VCB_SAVE["BF_GENERAL_fontcolor_r"],VCB_SAVE["BF_GENERAL_fontcolor_g"],VCB_SAVE["BF_GENERAL_fontcolor_b"],VCB_SAVE["BF_GENERAL_fontopacity"])
+	buttonCount:ClearAllPoints()
+	buttonCount:SetPoint("BOTTOMRIGHT", VCB_SAVE["BF_GENERAL_fontoffset_x"], VCB_SAVE["BF_GENERAL_fontoffset_y"])
+end
+
 function VCB_BF_RepositioningAndResizing()
 	local a = 1
 	local b = 1
@@ -232,7 +312,9 @@ function VCB_BF_RepositioningAndResizing()
 		
 		local CF = 0
 		if VCB_SAVE["MISC_disable_CF"] then
-			button:SetParent(VCB_BF_BUFF_FRAME)
+			if button:GetParent() ~= VCB_BF_COMBAT_FRAME then
+				button:SetParent(VCB_BF_BUFF_FRAME)
+			end
 			CF = 1
 		end
 		
@@ -241,9 +323,7 @@ function VCB_BF_RepositioningAndResizing()
 		if parent == VCB_BF_BUFF_FRAME and (button.buffIndex >= 0 or VCB_BF_DUMMY_MODE or (not VCB_BF_LOCKED)) then
 			button:ClearAllPoints()
 			
-			buttonDuration:ClearAllPoints()
-			buttonDuration:SetPoint("TOPLEFT", button, "BOTTOMLEFT", -20, VCB_SAVE["Timer_yoffset"])
-			buttonDuration:SetPoint("TOPRIGHT", button, "BOTTOMRIGHT", 20, VCB_SAVE["Timer_yoffset"])
+			VCB_BF_StyleBuffButton(button, timeLeft)
 			
 			local u = 0
 			local o = 0
@@ -253,6 +333,8 @@ function VCB_BF_RepositioningAndResizing()
 					if (not VCB_SAVE["CF_icon_attach"]) then u = u - 1 end
 				else
 					local hasMainHandEnchant, mainHandExpiration, mainHandCharges, hasOffHandEnchant, offHandExpiration, offHandCharges = GetWeaponEnchantInfo()
+					hasMainHandEnchant = VCB_BF_WeaponShown(hasMainHandEnchant, 16)
+					hasOffHandEnchant = VCB_BF_WeaponShown(hasOffHandEnchant, 17)
 					if hasMainHandEnchant then u = u + 1 end
 					if hasOffHandEnchant then u = u + 1 end
 					if (not VCB_SAVE["CF_icon_attach"]) then u = u - 1 end
@@ -293,57 +375,6 @@ function VCB_BF_RepositioningAndResizing()
 					button:SetPoint("TOPRIGHT", VCB_BF_BUFF_FRAME, "TOPRIGHT", -(32+VCB_SAVE["BF_GENERAL_padding_h"])*(a+u) + floor((a+u-CF)/(VCB_SAVE["BF_GENERAL_numperrow"]))*(VCB_SAVE["BF_GENERAL_numperrow"])*(32+VCB_SAVE["BF_GENERAL_padding_h"]) + (32+VCB_SAVE["BF_GENERAL_padding_h"])*CF,-(44+VCB_SAVE["BF_GENERAL_padding_v"])*floor((a+u-o-CF)/(VCB_SAVE["BF_GENERAL_numperrow"]-o)))
 				end
 			end
-			if VCB_SAVE["Timer_usecfont"] then
-				if VCB_SAVE["BF_TIMER_border"] then
-					buttonDuration:SetFont(VCB_SAVE["Timer_customfont"], VCB_SAVE["BF_TIMER_fontsize"], "OUTLINE")
-				else
-					buttonDuration:SetFont(VCB_SAVE["Timer_customfont"], VCB_SAVE["BF_TIMER_fontsize"])
-				end
-
-			else
-				if VCB_SAVE["BF_TIMER_border"] then
-					buttonDuration:SetFont(VCB_SAVE["Timer_font"], VCB_SAVE["BF_TIMER_fontsize"], "OUTLINE")
-				else
-					buttonDuration:SetFont(VCB_SAVE["Timer_font"], VCB_SAVE["BF_TIMER_fontsize"])
-				end
-			end
-			if VCB_SAVE["Timer_below_60"] and timeLeft < 60 then
-				buttonDuration:SetTextColor(VCB_SAVE["Timer_below_60_color_r"],VCB_SAVE["Timer_below_60_color_g"],VCB_SAVE["Timer_below_60_color_b"],VCB_SAVE["BF_TIMER_fontopacity"])
-			else
-				buttonDuration:SetTextColor(VCB_SAVE["BF_TIMER_fontcolor_r"],VCB_SAVE["BF_TIMER_fontcolor_g"],VCB_SAVE["BF_TIMER_fontcolor_b"],VCB_SAVE["BF_TIMER_fontopacity"])
-			end
-			if VCB_SAVE["BF_GENERAL_enablebgcolor"] then
-				buttonIcon:SetVertexColor(VCB_SAVE["BF_GENERAL_bgcolor_r"],VCB_SAVE["BF_GENERAL_bgcolor_g"],VCB_SAVE["BF_GENERAL_bgcolor_b"],VCB_SAVE["BF_GENERAL_bgopacity"])
-			else
-				buttonIcon:SetVertexColor(1,1,1,VCB_SAVE["BF_GENERAL_bgopacity"])
-			end
-			if VCB_SAVE["BF_BORDER_enableborder"] then
-				buttonBorder:SetTexture(nil)
-				if VCB_SAVE["BF_BORDER_usecustomborder"] then
-					buttonBorder:SetTexture(VCB_SAVE["BF_BORDER_customborderpath"])
-				else
-					buttonBorder:SetTexture(VCB_AURABORDER_ARRAY[VCB_SAVE["BF_BORDER_border"]])
-				end
-				buttonBorder:SetVertexColor(VCB_SAVE["BF_BORDER_bordercolor_r"],VCB_SAVE["BF_BORDER_bordercolor_g"],VCB_SAVE["BF_BORDER_bordercolor_b"],VCB_SAVE["BF_BORDER_borderopacity"])
-			else
-				buttonBorder:SetTexture(nil)
-			end
-			if VCB_SAVE["BF_GENERAL_usecfont"] then
-				if VCB_SAVE["BF_GENERAL_enableborder"] then
-					buttonCount:SetFont(VCB_SAVE["BF_GENERAL_customfont"], VCB_SAVE["BF_GENERAL_fontsize"], "OUTLINE")
-				else
-					buttonCount:SetFont(VCB_SAVE["BF_GENERAL_customfont"], VCB_SAVE["BF_GENERAL_fontsize"])
-				end
-			else
-				if VCB_SAVE["BF_GENERAL_enableborder"] then
-					buttonCount:SetFont(VCB_SAVE["BF_GENERAL_font"], VCB_SAVE["BF_GENERAL_fontsize"], "OUTLINE")
-				else
-					buttonCount:SetFont(VCB_SAVE["BF_GENERAL_font"], VCB_SAVE["BF_GENERAL_fontsize"])
-				end
-			end
-			buttonCount:SetVertexColor(VCB_SAVE["BF_GENERAL_fontcolor_r"],VCB_SAVE["BF_GENERAL_fontcolor_g"],VCB_SAVE["BF_GENERAL_fontcolor_b"],VCB_SAVE["BF_GENERAL_fontopacity"])
-			buttonCount:ClearAllPoints()
-			buttonCount:SetPoint("BOTTOMRIGHT", VCB_SAVE["BF_GENERAL_fontoffset_x"], VCB_SAVE["BF_GENERAL_fontoffset_y"])
 			a = a + 1
 		end
 		
@@ -366,7 +397,9 @@ function VCB_BF_RepositioningAndResizing()
 		
 		CF = 0
 		if VCB_SAVE["MISC_disable_CF"] then
-			button:SetParent(VCB_BF_BUFF_FRAME)
+			if button:GetParent() ~= VCB_BF_COMBAT_FRAME then
+				button:SetParent(VCB_BF_BUFF_FRAME)
+			end
 			CF = 1
 		end
 		if parent == VCB_BF_CONSOLIDATED_BUFFFRAME and (button.buffIndex >= 0 or VCB_BF_DUMMY_MODE or (not VCB_BF_LOCKED)) then
@@ -441,9 +474,219 @@ function VCB_BF_RepositioningAndResizing()
 				getglobal("GrayedIcon"..i):Hide()
 			end
 		end
+		VCB_BF_HideGrayedAuras(0)
 		getglobal("VCB_BF_CONSOLIDATED_ICONCount"):SetText(b-1)
 		VCB_BF_ResizeConsolidatedFrame(b-1)
 	end
+	VCB_BF_RepositionCombat()
+end
+
+function VCB_BF_StopDrag(button)
+	if button.dragFrame then
+		button.dragFrame:StopMovingOrSizing()
+		if button.dragFrame == VCB_BF_COMBAT_FRAME then
+			VCB_BF_CombatFrame_SavePos()
+		end
+		button.dragFrame = nil
+	end
+end
+
+-- Hide out of combat (VCB_EXTRA.combat_hideooc); always shown while unlocked so it can be moved
+function VCB_BF_CombatFrame_UpdateVisibility(inCombat)
+	if inCombat == nil then inCombat = UnitAffectingCombat("player") end
+	if VCB_EXTRA and VCB_EXTRA["combat_hideooc"] and VCB_BF_LOCKED and not inCombat then
+		VCB_BF_COMBAT_FRAME:Hide()
+	else
+		VCB_BF_COMBAT_FRAME:Show()
+	end
+end
+
+local combatMissingCount = 0 -- placeholder icons created so far for missing listed buffs
+
+-- Lays out the combat frame in list order, so each buff keeps its slot
+function VCB_BF_RepositionCombat()
+	local n = 0
+	local missing = 0
+	local step = 32 + VCB_SAVE["BF_GENERAL_padding_h"]
+	for _, listed in ipairs(VCB_COMBAT_BUFFS or {}) do
+		local lname = strlower(listed)
+		local found = false
+		for i=0, VCB_MAXINDEX.buff do
+			local button = getglobal("VCB_BF_BUFF_BUTTON"..i)
+			if button:GetParent() == VCB_BF_COMBAT_FRAME and button.combatName == lname and button.buffIndex and button.buffIndex >= 0 then
+				button:ClearAllPoints()
+				button:SetPoint("TOPLEFT", VCB_BF_COMBAT_FRAME, "TOPLEFT", step*n, 0)
+				VCB_BF_StyleBuffButton(button, GetPlayerBuffTimeLeft(button.buffIndex))
+				n = n + 1
+				found = true
+			end
+		end
+		-- A missing listed buff keeps its slot as a red-tinted icon
+		if not found and VCB_EXTRA and VCB_EXTRA["combat_showmissing"] then
+			missing = missing + 1
+			local ph = VCB_BF_GetCombatMissingIcon(missing)
+			ph.buffName = listed
+			getglobal(ph:GetName().."Icon"):SetTexture(VCB_BF_GetCombatIcon(lname))
+			ph:ClearAllPoints()
+			ph:SetPoint("TOPLEFT", VCB_BF_COMBAT_FRAME, "TOPLEFT", step*n, 0)
+			ph:Show()
+			n = n + 1
+		end
+	end
+	for i = missing + 1, combatMissingCount do
+		getglobal("VCB_BF_COMBAT_MISSING"..i):Hide()
+	end
+
+	-- While unlocked, show a placeholder with one slot per listed buff so the frame can be dragged
+	local slots = n
+	local unlocked = (not VCB_BF_LOCKED) and VCB_COMBAT_BUFFS and table.getn(VCB_COMBAT_BUFFS) > 0
+	if unlocked and table.getn(VCB_COMBAT_BUFFS) > slots then
+		slots = table.getn(VCB_COMBAT_BUFFS)
+	end
+	VCB_BF_COMBAT_FRAME:SetWidth(math.max(slots*step - VCB_SAVE["BF_GENERAL_padding_h"], 32))
+	VCB_BF_COMBAT_FRAME:SetHeight(32)
+	VCB_BF_COMBAT_FRAME:EnableMouse(unlocked)
+	VCB_BF_CombatFrame_UpdateVisibility()
+	if unlocked then
+		VCB_BF_COMBAT_FRAMEGhost:Show()
+		VCB_BF_COMBAT_FRAMELabel:Show()
+	else
+		VCB_BF_COMBAT_FRAMEGhost:Hide()
+		VCB_BF_COMBAT_FRAMELabel:Hide()
+	end
+end
+
+-- Icon for a listed buff that is not up: the one seen last time, else the spellbook's, else a question mark
+local combatIconMisses = {} -- buffs with no spellbook icon, so the spellbook is searched once per session
+
+function VCB_BF_GetCombatIcon(lname)
+	local icons = VCB_EXTRA["combat_icons"]
+	if icons[lname] then return icons[lname] end
+	if not combatIconMisses[lname] then
+		local i = 1
+		while true do
+			local spell = GetSpellName(i, BOOKTYPE_SPELL)
+			if not spell then break end
+			if strlower(spell) == lname then
+				icons[lname] = GetSpellTexture(i, BOOKTYPE_SPELL)
+				return icons[lname]
+			end
+			i = i + 1
+		end
+		combatIconMisses[lname] = true
+	end
+	return "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+function VCB_BF_GetCombatMissingIcon(i)
+	if i <= combatMissingCount then return getglobal("VCB_BF_COMBAT_MISSING"..i) end
+	combatMissingCount = i
+	local ph = CreateFrame("Button", "VCB_BF_COMBAT_MISSING"..i, VCB_BF_COMBAT_FRAME)
+	ph:SetWidth(32)
+	ph:SetHeight(32)
+	local icon = ph:CreateTexture(ph:GetName().."Icon", "BACKGROUND")
+	icon:SetAllPoints(ph)
+	icon:SetVertexColor(0.8, 0.3, 0.3)
+	ph:SetScript("OnEnter", function()
+		GameTooltip:SetOwner(this, "ANCHOR_BOTTOMLEFT")
+		GameTooltip:SetText(this.buffName, 0.85, 0.35, 0.35)
+		GameTooltip:Show()
+	end)
+	ph:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	ph:SetScript("OnMouseDown", function()
+		if not VCB_BF_LOCKED then
+			this.dragFrame = VCB_BF_COMBAT_FRAME
+			this.dragFrame:StartMoving()
+		end
+	end)
+	ph:SetScript("OnMouseUp", function() VCB_BF_StopDrag(this) end)
+	ph:SetScript("OnHide", function() VCB_BF_StopDrag(this) end)
+	return ph
+end
+
+function VCB_BF_CombatFrame_Init()
+	if VCB_EXTRA == nil then VCB_EXTRA = {} end
+	if VCB_COMBAT_BUFFS == nil then VCB_COMBAT_BUFFS = {} end
+	if VCB_EXTRA["combat_scale"] == nil then VCB_EXTRA["combat_scale"] = 1 end
+	if VCB_EXTRA["combat_icons"] == nil then VCB_EXTRA["combat_icons"] = {} end
+	if VCB_EXTRA["combat_showmissing"] == nil then VCB_EXTRA["combat_showmissing"] = true end
+	if VCB_EXTRA["combat_hideooc"] == nil then VCB_EXTRA["combat_hideooc"] = true end
+	if VCB_EXTRA["wp_showmissing"] == nil then VCB_EXTRA["wp_showmissing"] = true end
+	VCB_BF_COMBAT_FRAME:SetScale(VCB_EXTRA["combat_scale"])
+	if VCB_COMBAT_POS and VCB_COMBAT_POS[1] then
+		VCB_BF_COMBAT_FRAME:ClearAllPoints()
+		VCB_BF_COMBAT_FRAME:SetPoint(VCB_COMBAT_POS[1], UIParent, VCB_COMBAT_POS[1], VCB_COMBAT_POS[2], VCB_COMBAT_POS[3])
+	end
+end
+
+function VCB_BF_CombatFrame_SavePos()
+	local point, _, _, xOfs, yOfs = VCB_BF_COMBAT_FRAME:GetPoint()
+	VCB_COMBAT_POS = {point, xOfs, yOfs}
+end
+
+function VCB_BF_CombatAdd(name)
+	for _, listed in ipairs(VCB_COMBAT_BUFFS) do
+		if strlower(listed) == strlower(name) then
+			VCB_SendMessage(name..VCB_IS_ALREADY_IN_LIST)
+			return
+		end
+	end
+	table.insert(VCB_COMBAT_BUFFS, name)
+	VCB_SendMessage(name..VCB_HAS_BEEN_ADDED)
+	VCB_BF_updateBuffs()
+end
+
+function VCB_BF_CombatRemove(name)
+	for i, listed in ipairs(VCB_COMBAT_BUFFS) do
+		if strlower(listed) == strlower(name) then
+			table.remove(VCB_COMBAT_BUFFS, i)
+			VCB_EXTRA["combat_icons"][strlower(listed)] = nil
+			VCB_SendMessage(listed..VCB_HAS_BEEN_REMOVED)
+			VCB_BF_updateBuffs()
+			return
+		end
+	end
+	VCB_SendMessage(name..VCB_IS_NOT_IN_LIST)
+end
+
+function VCB_BF_CombatList()
+	if table.getn(VCB_COMBAT_BUFFS) == 0 then
+		VCB_SendMessage("The combat frame is empty. Add a buff with /vcb combat add <buff name>")
+		return
+	end
+	VCB_SendMessage("Combat frame buffs:")
+	for i, listed in ipairs(VCB_COMBAT_BUFFS) do
+		DEFAULT_CHAT_FRAME:AddMessage("  "..i..". "..listed)
+	end
+end
+
+function VCB_BF_CombatClear()
+	VCB_COMBAT_BUFFS = {}
+	VCB_EXTRA["combat_icons"] = {}
+	VCB_SendMessage("Combat frame emptied.")
+	VCB_BF_updateBuffs()
+end
+
+function VCB_BF_CombatScale(value)
+	local scale = tonumber(value)
+	if scale and scale >= 0.5 and scale <= 3 then
+		VCB_EXTRA["combat_scale"] = scale
+		VCB_BF_COMBAT_FRAME:SetScale(scale)
+		VCB_SendMessage("Combat frame scale: "..scale)
+	else
+		VCB_SendMessage("Usage: /vcb combat scale <0.5-3>, currently "..VCB_EXTRA["combat_scale"])
+	end
+end
+
+-- Consolidated_Buffs keeps names as typed ("Greater Blessing of Kings") while the checks below use
+-- lowercase names, so compare case-insensitively
+function VCB_BF_ConsolidatedHas(lname)
+	for _, value in pairs(Consolidated_Buffs) do
+		if strlower(value) == lname then
+			return true
+		end
+	end
+	return false
 end
 
 function VCB_BF_ADD_GRAYEDOUTICONS(x)
@@ -469,6 +712,7 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 			getglobal("GrayedIcon"..i):Hide()
 		end
 	end
+	VCB_BF_HideGrayedAuras(0)
 	
 	local buffs = {}
 	local tchildren =  { VCB_BF_CONSOLIDATED_BUFFFRAME:GetChildren() }
@@ -518,9 +762,17 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 		end
 	end
 	
+	-- Blessings still to come: one per paladin, minus the blessings you already have
+	local blessingSlots = numPaladins
+	for _, pair in ipairs({{4,5},{6,7},{8,9},{10,11},{12,13}}) do
+		if VCB_Contains(buffs, getglobal("VCB_ABILITY_LOWER_SCRIPT_"..pair[1])) or VCB_Contains(buffs, getglobal("VCB_ABILITY_LOWER_SCRIPT_"..pair[2])) then
+			blessingSlots = blessingSlots - 1
+		end
+	end
+	
 	-- Add grayed out icons
 	-- Druid
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_1)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_2)) and VCB_Contains(classes, "DRUID") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_2) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_1)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_1)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_2)) and VCB_Contains(classes, "DRUID") and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_2) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_1)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon0:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon0:Show()
@@ -529,64 +781,84 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 	else
 		GrayedIcon0:Hide()
 	end
-	-- Hunter
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_3)) and VCB_Contains(classes, "HUNTER") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_3)) then
-		if VCB_SAVE["CF_icon_showpbgrayedout"] then
-			GrayedIcon1:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
-			GrayedIcon1:Show()
-		end
-		x = x + 1
-	else
-		GrayedIcon1:Hide()
-	end
 	-- Paladin
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_4)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_5)) and VCB_Contains(classes, "PALADIN") and (numPaladins > VCB_BF_getNumPaladinBuffs(buffs, VCB_ABILITY_LOWER_SCRIPT_5)) and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_4) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_5)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_4)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_5)) and VCB_Contains(classes, "PALADIN") and blessingSlots > 0 and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_4) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_5)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon2:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon2:Show()
 		end
 		x = x + 1
+		blessingSlots = blessingSlots - 1
 	else
 		GrayedIcon2:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_6)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_7)) and VCB_Contains(classes, "PALADIN") and (numPaladins > VCB_BF_getNumPaladinBuffs(buffs, VCB_ABILITY_LOWER_SCRIPT_7)) and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_6) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_7)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_6)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_7)) and VCB_Contains(classes, "PALADIN") and blessingSlots > 0 and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_6) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_7)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon3:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon3:Show()
 		end
 		x = x + 1
+		blessingSlots = blessingSlots - 1
 	else
 		GrayedIcon3:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_8)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_9)) and VCB_Contains(classes, "PALADIN") and (numPaladins > VCB_BF_getNumPaladinBuffs(buffs, VCB_ABILITY_LOWER_SCRIPT_9)) and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_8) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_9)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_8)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_9)) and VCB_Contains(classes, "PALADIN") and blessingSlots > 0 and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_8) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_9)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon4:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon4:Show()
 		end
 		x = x + 1
+		blessingSlots = blessingSlots - 1
 	else
 		GrayedIcon4:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_10)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_11)) and VCB_Contains(classes, "PALADIN") and (numPaladins > VCB_BF_getNumPaladinBuffs(buffs, VCB_ABILITY_LOWER_SCRIPT_11)) and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_10) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_11)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_10)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_11)) and VCB_Contains(classes, "PALADIN") and blessingSlots > 0 and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_10) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_11)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon5:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon5:Show()
 		end
 		x = x + 1
+		blessingSlots = blessingSlots - 1
 	else
 		GrayedIcon5:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_12)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_13)) and VCB_Contains(classes, "PALADIN") and (numPaladins > VCB_BF_getNumPaladinBuffs(buffs, VCB_ABILITY_LOWER_SCRIPT_13)) and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_12) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_13)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_12)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_13)) and VCB_Contains(classes, "PALADIN") and blessingSlots > 0 and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_12) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_13)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon6:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon6:Show()
 		end
 		x = x + 1
+		blessingSlots = blessingSlots - 1
 	else
 		GrayedIcon6:Hide()
 	end
+	-- Group auras (paladin, hunter, druid): they only reach the caster's own group, and one aura
+	-- can't come from two casters, so a class adds at most one slot per aura on the consolidated list
+	local auraIcons = 0
+	for _, group in ipairs(VCB_GROUP_AURAS) do
+		local listed, have = 0, 0
+		for _, aura in ipairs(group.auras) do
+			if VCB_BF_ConsolidatedHas(aura) then
+				listed = listed + 1
+				if VCB_Contains(buffs, aura) then have = have + 1 end
+			end
+		end
+		local slots = math.min(VCB_BF_NumGroupClass(group.class), listed) - have
+		if slots > 0 then
+			for k = 1, slots do
+				if VCB_SAVE["CF_icon_showpbgrayedout"] then
+					auraIcons = auraIcons + 1
+					local icon = VCB_BF_GetGrayedAura(auraIcons, group.icon)
+					icon:ClearAllPoints()
+					icon:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
+					icon:Show()
+				end
+				x = x + 1
+			end
+		end
+	end
 	-- Mage
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_14)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_15)) and VCB_Contains(classes, "MAGE") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_14) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_15)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_14)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_15)) and VCB_Contains(classes, "MAGE") and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_14) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_15)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon7:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon7:Show()
@@ -596,7 +868,7 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 		GrayedIcon7:Hide()
 	end
 	-- Priest
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_16)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_17)) and VCB_Contains(classes, "PRIEST") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_17) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_16)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_16)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_17)) and VCB_Contains(classes, "PRIEST") and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_17) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_16)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon8:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon8:Show()
@@ -605,7 +877,7 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 	else
 		GrayedIcon8:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_18)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_19)) and VCB_Contains(classes, "PRIEST") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_19) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_18)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_18)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_19)) and VCB_Contains(classes, "PRIEST") and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_19) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_18)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon9:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon9:Show()
@@ -614,7 +886,7 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 	else
 		GrayedIcon9:Hide()
 	end
-	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_20)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_21)) and VCB_Contains(classes, "PRIEST") and (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_21) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_20)) then
+	if (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_20)) and (not VCB_Contains(buffs, VCB_ABILITY_LOWER_SCRIPT_21)) and VCB_Contains(classes, "PRIEST") and (VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_21) or VCB_BF_ConsolidatedHas(VCB_ABILITY_LOWER_SCRIPT_20)) then
 		if VCB_SAVE["CF_icon_showpbgrayedout"] then
 			GrayedIcon10:SetPoint("TOPRIGHT", VCB_BF_CONSOLIDATED_BUFFFRAME, "TOPRIGHT", (-(32+VCB_SAVE["CF_AURA_padding_h"])*x)+(24-0.5*VCB_SAVE["CF_AURA_padding_h"]) + (ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)*VCB_SAVE["CF_BF_numperrow"]*(32+VCB_SAVE["CF_AURA_padding_h"]),-(44+VCB_SAVE["CF_AURA_padding_v"])*(ceil(x/VCB_SAVE["CF_BF_numperrow"]) - 1)-(6+VCB_SAVE["CF_AURA_padding_v"]))
 			GrayedIcon10:Show()
@@ -626,8 +898,6 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 	
 	if VCB_SAVE["CF_icon_possiblebuffs"] then
 		gd = x - b
-		local cPB = VCB_BF_GetNumPBuffsInCF()
-		if cPB > numPaladins then gd = gd - (cPB - numPaladins) end
 		local result = (gd+b-1)
 		if result < (b-1) then result = (b-1) end
 		
@@ -642,39 +912,64 @@ function VCB_BF_ADD_GRAYEDOUTICONS(x)
 	end
 end
 
-function VCB_BF_getNumPaladinBuffs(buffs, ext)
-	local paladinBuffs = {}
+-- Gray placeholders for missing group auras; the names contain "GrayedIcon" so the buff scan above skips them
+local grayedAuraCount = 0
+
+-- Members of a class in your own group: your party, or your subgroup in a raid (you included)
+function VCB_BF_NumGroupClass(wanted)
 	local count = 0
-	paladinBuffs = {
-		[1] = VCB_ABILITY_LOWER_SCRIPT_5,
-		[2] = VCB_ABILITY_LOWER_SCRIPT_7,
-		[3] = VCB_ABILITY_LOWER_SCRIPT_9,
-		[4] = VCB_ABILITY_LOWER_SCRIPT_11,
-		[5] = VCB_ABILITY_LOWER_SCRIPT_13,
-		[6] = VCB_ABILITY_LOWER_SCRIPT_4,
-		[7] = VCB_ABILITY_LOWER_SCRIPT_6,
-		[8] = VCB_ABILITY_LOWER_SCRIPT_8,
-		[9] = VCB_ABILITY_LOWER_SCRIPT_10,
-		[10] = VCB_ABILITY_LOWER_SCRIPT_12,
-	}
-	for i=1,10 do
-		if VCB_Contains(buffs, paladinBuffs[i]) and (not strfind(paladinBuffs[i], ext)) then
-			count = count + 1
+	local _, myClass = UnitClass("player")
+	if myClass == wanted then count = 1 end
+	if UnitInRaid("player") then
+		local me = UnitName("player")
+		local mySubgroup
+		for i=1, GetNumRaidMembers() do
+			local name, _, subgroup = GetRaidRosterInfo(i)
+			if name == me then
+				mySubgroup = subgroup
+				break
+			end
+		end
+		for i=1, GetNumRaidMembers() do
+			local name, _, subgroup = GetRaidRosterInfo(i)
+			local _, class = UnitClass("raid"..i)
+			if name ~= me and subgroup == mySubgroup and class == wanted then
+				count = count + 1
+			end
+		end
+	else
+		for i=1, GetNumPartyMembers() do
+			local _, class = UnitClass("party"..i)
+			if class == wanted then
+				count = count + 1
+			end
 		end
 	end
 	return count
 end
 
-function VCB_BF_GetNumPBuffsInCF()
-	local count = 0
-	
-	if (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_4) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_5)) then count = count + 1 end
-	if (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_6) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_7)) then count = count + 1 end
-	if (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_8) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_9)) then count = count + 1 end
-	if (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_10) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_11)) then count = count + 1 end
-	if (VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_12) or VCB_Contains(Consolidated_Buffs, VCB_ABILITY_LOWER_SCRIPT_13)) then count = count + 1 end
-	
-	return count
+function VCB_BF_GetGrayedAura(k, texture)
+	if k > grayedAuraCount then
+		local GIcon = CreateFrame("Button", "GrayedIconAura"..k, VCB_BF_CONSOLIDATED_BUFFFRAME, nil)
+		GIcon:SetWidth(32)
+		GIcon:SetHeight(32)
+		local t = GIcon:CreateTexture(nil,"BACKGROUND")
+		t:SetAllPoints(GIcon)
+		t:SetVertexColor(0.3,0.3,0.3,1)
+		GIcon.icon = t
+		GIcon:SetScript("OnEnter", function() VCB_BF_CONSOLIDATED_BUFFFRAME:Show() end)
+		GIcon:SetScript("OnLeave", function() VCB_BF_CONSOLIDATED_BUFFFRAME:Hide() end)
+		grayedAuraCount = k
+	end
+	local GIcon = getglobal("GrayedIconAura"..k)
+	GIcon.icon:SetTexture("Interface\\Icons\\"..texture)
+	return GIcon
+end
+
+function VCB_BF_HideGrayedAuras(from)
+	for k = from + 1, grayedAuraCount do
+		getglobal("GrayedIconAura"..k):Hide()
+	end
 end
 
 function VCB_BF_RepositionDebuffs()
@@ -797,7 +1092,7 @@ function VCB_BF_GETBUTTONALPHA(button)
 	if button.cat == "debuff" then 
 		a = VCB_SAVE["DBF_GENERAL_bgopacity"]
 	elseif button.cat == "buff" then
-		if button:GetParent() == VCB_BF_BUFF_FRAME then
+		if button:GetParent() == VCB_BF_BUFF_FRAME or button:GetParent() == VCB_BF_COMBAT_FRAME then
 			a = VCB_SAVE["BF_GENERAL_bgopacity"]
 		else
 			a = VCB_SAVE["CF_AURA_bgopacity"]
@@ -812,8 +1107,20 @@ function VCB_BF_BUFF_BUTTON_OnClick(button)
 	end
 end
 
+-- Which weapon icons the last layout was made for. The icons are shown or hidden on every update tick,
+-- but layout only runs on events, so the tick re-runs it when the two disagree (e.g. an off-hand item
+-- whose details were not loaded yet at login, or a poison running out without an inventory event).
+local weaponLayoutKey
+
+function VCB_BF_WeaponLayoutKey(hasMainHandEnchant, hasOffHandEnchant)
+	return (VCB_BF_WeaponShown(hasMainHandEnchant, 16) and "M" or "-")..(VCB_BF_WeaponShown(hasOffHandEnchant, 17) and "O" or "-")
+end
+
 function VCB_BF_WEAPON_BUTTON_OnEvent(bool)
 	local hasMainHandEnchant, mainHandExpiration, mainHandCharges, hasOffHandEnchant, offHandExpiration, offHandCharges = GetWeaponEnchantInfo();
+	weaponLayoutKey = VCB_BF_WeaponLayoutKey(hasMainHandEnchant, hasOffHandEnchant)
+	hasMainHandEnchant = VCB_BF_WeaponShown(hasMainHandEnchant, 16)
+	hasOffHandEnchant = VCB_BF_WeaponShown(hasOffHandEnchant, 17)
 	local u = 0
 	if hasMainHandEnchant then u = u + 1 end
 	if hasOffHandEnchant then u = u + 1 end
@@ -902,11 +1209,62 @@ function VCB_BF_WEAPON_BUTTON_OnEvent(bool)
 	VCB_BF_WEAPON_BUTTON_OnUpdate(2.0)
 end
 
+-- Missing weapon buffs: a weapon slot with no poison/stone can keep its icon, tinted red (VCB_EXTRA.wp_showmissing)
+local offHandLink, offHandIsWeapon -- last off-hand item checked; this runs several times a second
+
+function VCB_BF_WeaponHasWeapon(slot)
+	if not GetInventoryItemTexture("player", slot) then return false end
+	if slot == 16 then return true end
+	-- Off hand counts only for weapons, not shields or held-in-off-hand items
+	local link = GetInventoryItemLink("player", slot)
+	if link == offHandLink then return offHandIsWeapon end
+	local _, _, id = strfind(link or "", "item:(%d+)")
+	if not id then return false end
+	local _, _, _, _, _, _, _, equipLoc = GetItemInfo(tonumber(id))
+	if not equipLoc then return false end -- item not in the client cache yet; try again next time
+	offHandLink = link
+	offHandIsWeapon = equipLoc == "INVTYPE_WEAPON" or equipLoc == "INVTYPE_WEAPONOFFHAND"
+	return offHandIsWeapon
+end
+
+function VCB_BF_WeaponShown(hasEnchant, slot)
+	if hasEnchant then return true end
+	return (VCB_EXTRA and VCB_EXTRA["wp_showmissing"] and VCB_BF_WeaponHasWeapon(slot)) and true or false
+end
+
+function VCB_BF_SetWeaponMissing(button, slot, missing)
+	local name = button:GetName()
+	local icon = getglobal(name.."Icon")
+	if missing then
+		icon:SetTexture(GetInventoryItemTexture("player", slot))
+		icon:SetVertexColor(0.8, 0.3, 0.3, VCB_SAVE["WP_GENERAL_bgopacity"])
+		getglobal(name.."Border"):SetVertexColor(0.7, 0.2, 0.2, VCB_SAVE["WP_BORDER_borderopacity"])
+		getglobal(name.."Duration"):Hide()
+		getglobal(name.."Count"):Hide()
+		button:SetID(slot)
+		button:Show()
+		button.missing = true
+	elseif button.missing then
+		button.missing = nil
+		if VCB_SAVE["WP_GENERAL_enablebgcolor"] then
+			icon:SetVertexColor(VCB_SAVE["WP_GENERAL_bgcolor_r"],VCB_SAVE["WP_GENERAL_bgcolor_g"],VCB_SAVE["WP_GENERAL_bgcolor_b"],VCB_SAVE["WP_GENERAL_bgopacity"])
+		else
+			icon:SetVertexColor(1,1,1,VCB_SAVE["WP_GENERAL_bgopacity"])
+		end
+	end
+end
+
 function VCB_BF_WEAPON_BUTTON_OnUpdate(elapsed)
 	timeSinceWeaponUpdate = timeSinceWeaponUpdate + elapsed
 	if(timeSinceWeaponUpdate > UPDATETIME) then
 		local hasMainHandEnchant, mainHandExpiration, mainHandCharges, hasOffHandEnchant, offHandExpiration, offHandCharges = GetWeaponEnchantInfo();
+		if VCB_IS_LOADED and (not VCB_BF_DUMMY_MODE) and VCB_BF_WeaponLayoutKey(hasMainHandEnchant, hasOffHandEnchant) ~= weaponLayoutKey then
+			-- Lays out again (buff bar included) and then runs this update itself
+			VCB_BF_WEAPON_BUTTON_OnEvent(true)
+			return
+		end
 		if(hasMainHandEnchant or VCB_BF_DUMMY_MODE) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON0, 16, false)
 			local textureName = GetInventoryItemTexture("player", 16)
 			if (VCB_BF_DUMMY_MODE == false) then
 				VCB_BF_WEAPON_BUTTON0Icon:SetTexture(textureName)
@@ -925,7 +1283,10 @@ function VCB_BF_WEAPON_BUTTON_OnUpdate(elapsed)
 			end
 			VCB_BF_WEAPON_BUTTON0:SetID(16)
 			VCB_BF_WEAPON_BUTTON0:Show()
+		elseif VCB_BF_WeaponShown(false, 16) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON0, 16, true)
 		elseif (VCB_BF_LOCKED) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON0, 16, false)
 			if (VCB_BF_DUMMY_MODE == false) then
 				VCB_BF_WEAPON_BUTTON0:Hide()
 			end
@@ -934,6 +1295,7 @@ function VCB_BF_WEAPON_BUTTON_OnUpdate(elapsed)
 		end
 
 		if(hasOffHandEnchant or VCB_BF_DUMMY_MODE) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON1, 17, false)
 			local textureName = GetInventoryItemTexture("player", 17)
 			if (VCB_BF_DUMMY_MODE == false) then
 				VCB_BF_WEAPON_BUTTON1Icon:SetTexture(textureName)
@@ -952,7 +1314,10 @@ function VCB_BF_WEAPON_BUTTON_OnUpdate(elapsed)
 			end
 			VCB_BF_WEAPON_BUTTON1:SetID(17)
 			VCB_BF_WEAPON_BUTTON1:Show()
+		elseif VCB_BF_WeaponShown(false, 17) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON1, 17, true)
 		elseif(VCB_BF_LOCKED) then
+			VCB_BF_SetWeaponMissing(VCB_BF_WEAPON_BUTTON1, 17, false)
 			if (VCB_BF_DUMMY_MODE == false) then
 				VCB_BF_WEAPON_BUTTON1:Hide()
 			end

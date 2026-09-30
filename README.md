@@ -29,23 +29,6 @@ Vanilla Consolidate Buff-Frames (VCB) is a smart system to manage your auras. Th
 * Enjoy
 
 
-### Supporting ###
-
-This is AddOn has become very huge and for one person a gigantic task.  
-To keep this AddOn **Up-To-Date, performant, clean and bugfree**, I need your help!   
-You can help in many ways:
-
-* [Report Bugs](https://bitbucket.org/Albea/vcb/issues?status=new&status=open), tell me how to reproduce them and improve everyones experience
-* Give **your opinion** about the AddOn and point out ideas in the forum threads ([Nostalrius](http://forum.nostalrius.org/viewtopic.php?f=63&t=18189) / [Kronos](http://forum.twinstar.cz/showthread.php/98688-RELEASE-VCB-Vanilla-Consolidated-Buff-Frames))
-* Some localizations are still missing, and since some functions require this, it is an important task and deserves a lot of thanks. If you are a native speaker of following languages and willing to contribute to this project then copy [this form](https://bitbucket.org/Albea/vcb/src/b7d4cb17cf96468fd1b482b9f3d7f6efa7d857d6/localization/enUS.lua?at=master) and post it in one of those threads. ([Nostalrius](http://forum.nostalrius.org/viewtopic.php?f=63&t=18189) / [Kronos](http://forum.twinstar.cz/showthread.php/98688-RELEASE-VCB-Vanilla-Consolidated-Buff-Frames))  
-Following languages are still missing: Spanish(esEs), Spanish(Mexican)(esMX), French(frFR), Italian(itIT), Korean(koKR), Portuguese(ptBR), Russian(ruRU), Chinese(zhCN), Chinese(Taiwan)(zhTW)
-* If you play on [Kronos](http://www.kronos-wow.com/) you can donate Gold to **Shino (on Alliance)**. By that I can invest more time in programming instead farming consumables.
-
-Everyone who contributes to this will be mentioned **in the About Tab** of the AddOn for an **permanent time**!
-
-![vUqDGgY.png](https://bitbucket.org/repo/54Xrdo/images/3261093832-vUqDGgY.png)
-
-
 ### How does it look like? ###
 
 **The Default Frame Configuration:**  
@@ -65,6 +48,16 @@ Everyone who contributes to this will be mentioned **in the About Tab** of the A
 
 
 ```
+
+**v3.1:**
+-Added the Combat Frame: a separate frame for specific buffs you want to track closely
+-Added Combat Frame options: buff list, show missing buffs, hide out of combat, scale
+-Added /vcb combat add, remove, list, clear and scale, and /vcb help
+-Added show missing for weapon buffs: a weapon without poison or stone keeps its icon, tinted red
+-Added paladin, hunter and druid auras to the expected buffs, counted only from your own group
+-Paladin blessings are now expected once per paladin
+-Fixed missing buffs never being expected or shown grayed out
+-Fixed buff names containing special characters possibly not matching the consolidated and banned lists
 
 **v2.5:**
 -Fixed Disappearing Issue

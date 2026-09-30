@@ -62,6 +62,51 @@
 			</OnLoad>
 		</Scripts>
 	</Frame>
+	<Frame name="VCB_BF_COMBAT_FRAME" parent="UIParent" toplevel="true" frameStrata="LOW" movable="true">
+		<Size>
+			<AbsDimension x="32" y="32"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+				<Offset>
+					<AbsDimension x="0" y="-150"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentGhost" setAllPoints="true" hidden="true">
+					<Color r="0.2" g="0.8" b="0.2" a="0.4"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<FontString name="$parentLabel" inherits="GameFontHighlightSmall" text="VCB Combat Frame" hidden="true">
+					<Anchors>
+						<Anchor point="BOTTOM" relativePoint="TOP"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				this:SetClampedToScreen(true)
+				this:RegisterEvent("PLAYER_REGEN_DISABLED")
+				this:RegisterEvent("PLAYER_REGEN_ENABLED")
+			</OnLoad>
+			<OnEvent>
+				VCB_BF_CombatFrame_UpdateVisibility(event == "PLAYER_REGEN_DISABLED")
+			</OnEvent>
+			<OnMouseDown>
+				if (not VCB_BF_LOCKED) then
+					this:StartMoving()
+				end
+			</OnMouseDown>
+			<OnMouseUp>
+				this:StopMovingOrSizing()
+				VCB_BF_CombatFrame_SavePos()
+			</OnMouseUp>
+		</Scripts>
+	</Frame>
 	<Frame name="VCB_BF_CONSOLIDATED_ICON" parent="VCB_BF_BUFF_FRAME" toplevel="true" frameStrata="LOW" movable="true">
 		<Size>
 			<AbsDimension x="32" y="32"/>
@@ -262,14 +307,21 @@
 		<Scripts>
 			<OnMouseDown>
 				if (not VCB_BF_LOCKED) then
-					VCB_BF_BUFF_FRAME:StartMoving()
+					if this:GetParent() == VCB_BF_COMBAT_FRAME then
+						this.dragFrame = VCB_BF_COMBAT_FRAME
+					else
+						this.dragFrame = VCB_BF_BUFF_FRAME
+					end
+					this.dragFrame:StartMoving()
 				end
 			</OnMouseDown>
 			<OnMouseUp>
-				if (not VCB_BF_LOCKED) then
-					VCB_BF_BUFF_FRAME:StopMovingOrSizing()
-				end
+				VCB_BF_StopDrag(this)
 			</OnMouseUp>
+			<OnHide>
+				-- A hidden icon never gets the mouse release, which would leave its frame stuck to the cursor
+				VCB_BF_StopDrag(this)
+			</OnHide>
 		</Scripts>
 		<Layers>
 			<Layer level="OVERLAY">

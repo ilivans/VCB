@@ -63,6 +63,19 @@
 		<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
 		<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
 	</Button>
+
+	<Button name = "VCB_COMBAT_LIST_ENTRY_TEMPLATE" virtual="true">
+		<Size x="350" y="40" />
+		<Scripts>
+			<OnClick>
+				VCB_COMBAT_SCROLLFRAME_ENTRY(this)
+			</OnClick>
+		</Scripts>
+		<NormalFont style="GameFontHighlightLeft" />
+		<NormalTexture file="Interface\Buttons\UI-DialogBox-Button-Up" />
+		<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
+		<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
+	</Button>
 	
 	<Slider name="VCB_BF_SliderTemplate" inherits="OptionsSliderTemplate" virtual="true">
 		<Scripts>
@@ -620,11 +633,45 @@
 						<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
 						<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
 					</Button>
+					-- Button 11
+					<Button name="VCB_BF_MENU_BUTTON11">
+						<Size x="130" y="40" />
+						<Anchors>
+							<Anchor point="TOP" relativeTo="VCB_BF_MENU_BUTTON7" relativePoint="BOTTOM">
+								<Offset x="0" y="10" />
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnClick>
+								VCB_OPTIONS_HIDE_ALL()
+								VCB_OPTIONS_SHOW("VCB_BF_COMBATOPT_FRAME", VCB_MENU_BUTTON11_LINK)
+							</OnClick>
+							<OnLoad>
+								getglobal(this:GetName().."_TITLE"):SetText(VCB_MENU_BUTTON11_NAME)
+							</OnLoad>
+						</Scripts>
+						<Layers>
+							<Layer>
+								-- Button Title
+								<FontString name="$parent_TITLE" inherits="GameFontNormalSmall" text="Combat Frame">
+									<Size x="130" y="40" />
+									<Anchors>
+										<Anchor point="CENTER">
+											<Offset x="0" y="7" />
+										</Anchor>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+						<NormalTexture file="Interface\Buttons\UI-DialogBox-Button-Up" />
+						<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
+						<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
+					</Button>
 					-- Button8
 					<Button name="VCB_BF_MENU_BUTTON8">
 						<Size x="130" y="40" />
 						<Anchors>
-							<Anchor point="TOP" relativeTo="VCB_BF_MENU_BUTTON7" relativePoint="BOTTOM">
+							<Anchor point="TOP" relativeTo="VCB_BF_MENU_BUTTON11" relativePoint="BOTTOM">
 								<Offset x="0" y="10" />
 							</Anchor>
 						</Anchors>
@@ -1626,6 +1673,513 @@
 							<Layers>
 								<Layer>
 									<FontString name="VCB_BANNED_BUFFS_ENTRY_TEXT10" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						</Frames>
+					</Frame>
+				</Frames>
+			</Frame>
+			-- Combat Frame (listed buffs)
+			<Frame name="VCB_BF_COMBATOPT_FRAME" hidden="true">
+				<Size x="610" y="435" />
+				<Anchors>
+					<Anchor point="Left" relativeTo="VCB_BF_MENU_BODY" relativePoint="RIGHT">
+						<Offset x="0" y="0" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnShow>
+						VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+					</OnShow>
+				</Scripts>
+				<Frames>
+					<Frame name="VCB_BF_COMBATOPT_FRAME_LEFT">
+						<Size x="220" y="435" />
+						<Anchors>
+							<Anchor point="Left">
+								<Offset x="0" y="0" />
+							</Anchor>
+						</Anchors>
+						<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+							<BackgroundInsets>
+								<AbsInset left="11" right="12" top="12" bottom="11" />
+							</BackgroundInsets>
+							<TileSize>
+								<AbsValue val="32" />
+							</TileSize>
+							<EdgeSize>
+								<AbsValue val="32" />
+							</EdgeSize>
+						</Backdrop>
+						<Layers>
+							<Layer>
+								<FontString name="$parent_INSERT" font="Fonts\FRIZQT__.TTF" text="Insert a buff name:" justifyH="LEFT">
+									<Size x="220" y="60" />
+									<Color r="1.0" g="0.82" b="0" />
+									<FontHeight val="20" />
+									<Anchors>
+										<Anchor point="TOP">
+											<Offset x="15" y="5" />
+										</Anchor>
+									</Anchors>
+								</FontString>
+								<FontString name="$parent_DELETE" font="Fonts\FRIZQT__.TTF" text="Selected aura:" justifyH="LEFT">
+									<Size x="220" y="60" />
+									<Color r="1.0" g="0.82" b="0" />
+									<FontHeight val="20" />
+									<Anchors>
+										<Anchor point="TOP" relativeTo="$parent_INSERT" relativePoint="BOTTOM">
+											<Offset x="0" y="-70" />
+										</Anchor>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Scripts>
+							<OnLoad>
+								getglobal(this:GetName().."_INSERT"):SetText(VCB_CB_BB_FRAME_LEFT_INSERT)
+								getglobal(this:GetName().."_DELETE"):SetText(VCB_CB_BB_FRAME_LEFT_DELETE)
+							</OnLoad>
+						</Scripts>
+						<Frames>
+							<EditBox name="VCB_BF_COMBATOPT_FRAME_EditBox" letters="80">
+								<Size x="160" y="40" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="VCB_BF_COMBATOPT_FRAME_LEFT_INSERT" relativePoint="BOTTOM">
+										<Offset x="-13" y="15" />
+									</Anchor>
+								</Anchors>
+								<Layers>
+									<Layer level="BACKGROUND">
+										<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+											<Size x="100" y="40" />
+											<Anchors>
+												<Anchor point="LEFT">
+													<Offset x="-20" y="0" />
+												</Anchor>
+											</Anchors>
+											<TexCoords left="0" right="0.2" top="0" bottom="1.0" />
+										</Texture>
+										<Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+											<Size x="100" y="40" />
+											<Anchors>
+												<Anchor point="RIGHT">
+													<Offset x="15" y="0" />
+												</Anchor>
+											</Anchors>
+											<TexCoords left="0.7" right="1.0" top="0" bottom="1.0" />
+										</Texture>
+									</Layer>
+								</Layers>
+								<Scripts>
+									<OnLoad>
+									</OnLoad>
+								</Scripts>
+								<FontString inherits="ChatFontNormal" />
+							</EditBox>
+							-- Button ADD
+							<Button name="VCB_BF_COMBATOPT_FRAME_ADD_BUTTON">
+								<Size x="180" y="40" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="VCB_BF_COMBATOPT_FRAME_EditBox" relativePoint="BOTTOM">
+										<Offset x="0" y="0" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										VCB_COMBAT_LIST_ADD()
+										PlaySound("igMainMenuOptionCheckBoxOff")
+									</OnClick>
+									<OnLoad>
+										getglobal(this:GetName().."_TITLE"):SetText(VCB_CB_BB_FRAME_LEFT_ADD)
+									</OnLoad>
+								</Scripts>
+								<Layers>
+									<Layer>
+										-- Button Title
+										<FontString name="$parent_TITLE" inherits="GameFontNormalSmall" text="ADD">
+											<Size x="180" y="40" />
+											<Anchors>
+												<Anchor point="CENTER">
+													<Offset x="0" y="7" />
+												</Anchor>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<NormalTexture file="Interface\Buttons\UI-DialogBox-Button-Up" />
+								<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
+								<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
+							</Button>
+							<Frame name="VCB_BF_COMBATOPT_FRAME_LEFT_DELETE_INBOX">
+								<Size x="195" y="40" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="$parent_DELETE" relativePoint="BOTTOM">
+										<Offset x="-15" y="15" />
+									</Anchor>
+								</Anchors>
+								<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+									<BackgroundInsets>
+										<AbsInset left="11" right="12" top="12" bottom="11" />
+									</BackgroundInsets>
+									<TileSize>
+										<AbsValue val="32" />
+									</TileSize>
+									<EdgeSize>
+										<AbsValue val="32" />
+									</EdgeSize>
+								</Backdrop>
+								<Layers>
+									<Layer>
+										<FontString name="$parent_TEXT" inherits="GameFontNormalSmall" text="">
+											<Size x="195" y="40" />
+											<Anchors>
+												<Anchor point="CENTER">
+													<Offset x="0" y="1" />
+												</Anchor>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+							</Frame>
+							-- Button DELETE
+							<Button name="VCB_BF_COMBATOPT_FRAME_DELETE_BUTTON">
+								<Size x="180" y="40" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="$parent_DELETE_INBOX" relativePoint="BOTTOM">
+										<Offset x="0" y="0" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										VCB_COMBAT_LIST_DELETE()
+										PlaySound("igMainMenuOptionCheckBoxOff")
+									</OnClick>
+									<OnLoad>
+										getglobal(this:GetName().."_TITLE"):SetText(VCB_CB_BB_FRAME_LEFT_DELETE_BUTTON)
+									</OnLoad>
+								</Scripts>
+								<Layers>
+									<Layer>
+										-- Button Title
+										<FontString name="$parent_TITLE" inherits="GameFontNormalSmall" text="DELETE">
+											<Size x="180" y="40" />
+											<Anchors>
+												<Anchor point="CENTER">
+													<Offset x="0" y="7" />
+												</Anchor>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<NormalTexture file="Interface\Buttons\UI-DialogBox-Button-Up" />
+								<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
+								<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
+							</Button>
+							-- Checkbutton show missing listed buffs
+							<CheckButton name="VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_SHOWMISSING" inherits="VCB_BF_CheckTemplate">
+								<Size x="30" y="30" />
+								<Anchors>
+									<Anchor point="TOPLEFT" relativeTo="VCB_BF_COMBATOPT_FRAME_DELETE_BUTTON" relativePoint="BOTTOMLEFT">
+										<Offset x="5" y="-10" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										this.tooltipText = VCB_COMBAT_FRAME_SHOW_MISSING_TOOLTIP
+										getglobal("VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_SHOWMISSINGText"):SetText(VCB_COMBAT_FRAME_SHOW_MISSING)
+									</OnLoad>
+									<OnClick>
+										VCB_BF_COMBAT_SHOWMISSING_CLICK()
+									</OnClick>
+								</Scripts>
+							</CheckButton>
+							-- Checkbutton hide combat frame out of combat
+							<CheckButton name="VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_HIDEOOC" inherits="VCB_BF_CheckTemplate">
+								<Size x="30" y="30" />
+								<Anchors>
+									<Anchor point="TOPLEFT" relativeTo="VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_SHOWMISSING" relativePoint="BOTTOMLEFT">
+										<Offset x="0" y="0" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										this.tooltipText = VCB_COMBAT_FRAME_HIDE_OOC_TOOLTIP
+										getglobal("VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_HIDEOOCText"):SetText(VCB_COMBAT_FRAME_HIDE_OOC)
+									</OnLoad>
+									<OnClick>
+										VCB_BF_COMBAT_HIDEOOC_CLICK()
+									</OnClick>
+								</Scripts>
+							</CheckButton>
+							-- Combat frame scale slider
+							<Slider name="VCB_BF_COMBATOPT_FRAME_ScaleSlider" inherits="VCB_BF_SliderTemplate">
+								<Size x="155" y="16" />
+								<Anchors>
+									<Anchor point="TOPLEFT" relativeTo="VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_HIDEOOC" relativePoint="BOTTOMLEFT">
+										<Offset x="5" y="-25" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										this.aide = VCB_COMMON_SLIDER_SCALE_TOOLTIP
+										this:SetMinMaxValues(0.5,3.0)
+										this:SetValue(1.0)
+										this:SetValueStep(0.1)
+										getglobal("VCB_BF_COMBATOPT_FRAME_ScaleSliderText"):SetText(VCB_COMMON_SLIDER_SCALE)
+										getglobal("VCB_BF_COMBATOPT_FRAME_ScaleSliderLow"):SetText("0.5")
+										getglobal("VCB_BF_COMBATOPT_FRAME_ScaleSliderHigh"):SetText("3.0")
+									</OnLoad>
+									<OnValueChanged>
+										if VCB_IS_LOADED then
+											VCB_BF_COMBATOPT_FRAME_ScaleSliderChange(this)
+										end
+									</OnValueChanged>
+								</Scripts>
+							</Slider>
+							-- Button Remove all
+							<Button name="VCB_BF_COMBATOPT_FRAME_RA_BUTTON">
+								<Size x="180" y="40" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="VCB_BF_COMBATOPT_FRAME_DELETE_BUTTON" relativePoint="BOTTOM">
+										<Offset x="0" y="-140" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										VCB_COMBAT_LIST_REMOVE_ALL()
+										PlaySound("igMainMenuOptionCheckBoxOff")
+									</OnClick>
+									<OnLoad>
+										getglobal(this:GetName().."_TITLE"):SetText(VCB_CB_BB_FRAME_LEFT_RA)
+									</OnLoad>
+								</Scripts>
+								<Layers>
+									<Layer>
+										-- Button Title
+										<FontString name="$parent_TITLE" inherits="GameFontNormalSmall" text="Remove all">
+											<Size x="180" y="40" />
+											<Anchors>
+												<Anchor point="CENTER">
+													<Offset x="0" y="7" />
+												</Anchor>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<NormalTexture file="Interface\Buttons\UI-DialogBox-Button-Up" />
+								<PushedTexture file="Interface\Buttons\UI-DialogBox-Button-Down" />
+								<HighlightTexture file="Interface\Buttons\UI-DialogBox-Button-Highlight" alphaMode="ADD" />
+							</Button>
+						</Frames>
+					</Frame>
+					<Frame name="VCB_BF_COMBATOPT_FRAME_RIGHT">
+						<Size x="390" y="435" />
+						<Anchors>
+							<Anchor point="Left" relativeTo="VCB_BF_COMBATOPT_FRAME_LEFT" relativePoint="RIGHT">
+								<Offset x="0" y="0" />
+							</Anchor>
+						</Anchors>
+						<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+							<BackgroundInsets>
+								<AbsInset left="11" right="12" top="12" bottom="11" />
+							</BackgroundInsets>
+							<TileSize>
+								<AbsValue val="32" />
+							</TileSize>
+							<EdgeSize>
+								<AbsValue val="32" />
+							</EdgeSize>
+						</Backdrop>
+						<Frames>
+							<ScrollFrame name="VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME" inherits="FauxScrollFrameTemplate">
+								<Anchors>
+									<Anchor point="TOPLEFT">
+										<Offset x="0" y="-5" />
+									</Anchor>
+									<Anchor point="BOTTOMRIGHT">
+										<Offset x="-30" y="8" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnVerticalScroll>
+										FauxScrollFrame_OnVerticalScroll(40, VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update) 
+									</OnVerticalScroll>
+									<OnShow>
+										VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+									</OnShow>
+							   </Scripts>
+							</ScrollFrame>
+							<Button name="VCB_COMBAT_LIST_ENTRY1" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME" relativePoint="TOPLEFT">
+								<Offset x="15" y="-15" />
+							   </Anchor>
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT1" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY2" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY1" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT2" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY3" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY2" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT3" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY4" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY3" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT4" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY5" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY4" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT5" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY6" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY5" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT6" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY7" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY6" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT7" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY8" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY7" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT8" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY9" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY8" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT9" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
+										<Size x="350" y="40" />
+										<Anchors>
+											<Anchor point="CENTER">
+												<Offset x="20" y="7" />
+											</Anchor>
+										</Anchors>
+									</FontString>
+								</Layer>
+							</Layers>
+						  </Button>
+						  <Button name="VCB_COMBAT_LIST_ENTRY10" inherits="VCB_COMBAT_LIST_ENTRY_TEMPLATE">
+							<Anchors>
+							  <Anchor point="TOPLEFT" relativeTo="VCB_COMBAT_LIST_ENTRY9" relativePoint="BOTTOMLEFT" />
+							</Anchors>
+							<Layers>
+								<Layer>
+									<FontString name="VCB_COMBAT_LIST_ENTRY_TEXT10" inherits="GameFontNormalSmall" text="" justifyH="LEFT">
 										<Size x="350" y="40" />
 										<Anchors>
 											<Anchor point="CENTER">
@@ -6160,7 +6714,7 @@
 				</Scripts>
 				<Frames>
 					<Frame name="VCB_BF_WP_FRAME_GENERAL">
-						<Size x="580" y="245" />
+						<Size x="580" y="275" />
 						<Anchors>
 							<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
 								<Offset x="15" y="-30" />
@@ -6233,6 +6787,24 @@
 									</OnClick>
 								</Scripts>
 							</CheckButton>
+							-- Checkbutton show missing weapon buffs
+							<CheckButton name="VCB_BF_WP_FRAME_CHECKBUTTON_SHOWMISSING" inherits="VCB_BF_CheckTemplate">
+								<Size x="30" y="30" />
+								<Anchors>
+									<Anchor point="TOP" relativeTo="VCB_BF_WP_FRAME_CHECKBUTTON7" relativePoint="BOTTOM">
+										<Offset x="0" y="0" />
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										this.tooltipText = VCB_WP_FRAME_SHOW_MISSING_TOOLTIP
+										getglobal("VCB_BF_WP_FRAME_CHECKBUTTON_SHOWMISSINGText"):SetText(VCB_WP_FRAME_SHOW_MISSING)
+									</OnLoad>
+									<OnClick>
+										VCB_BF_WP_SHOWMISSING_CLICK()
+									</OnClick>
+								</Scripts>
+							</CheckButton>
 							-- COLOR PICKER
 							<Button name="VCB_BF_WP_FRAME_Color1">
 								<Size x="16" y="16" />
@@ -6290,7 +6862,7 @@
 							<Button name="VCB_BF_WP_FRAME_Color5">
 								<Size x="16" y="16" />
 								<Anchors>
-									<Anchor point="TOP" relativeTo="VCB_BF_WP_FRAME_CHECKBUTTON7" relativePoint="BOTTOM">
+									<Anchor point="TOP" relativeTo="VCB_BF_WP_FRAME_CHECKBUTTON_SHOWMISSING" relativePoint="BOTTOM">
 										<Offset x="0" y="-5" />
 									</Anchor>
 								</Anchors>

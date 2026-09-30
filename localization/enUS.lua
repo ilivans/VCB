@@ -32,6 +32,8 @@
 	VCB_MENU_BUTTON9_NAME = "Miscellaneous"
 	VCB_MENU_BUTTON10_LINK = "About VCB"
 	VCB_MENU_BUTTON10_NAME = "About VCB"
+	VCB_MENU_BUTTON11_LINK = "Combat Frame"
+	VCB_MENU_BUTTON11_NAME = "Combat Frame"
 	VCB_CONFIG_FRAME_TITLE_ONLOAD = "Consolidated Buffs"
 	VCB_CB_BB_FRAME_LEFT_INSERT = "Insert a buff name:"
 	VCB_CB_BB_FRAME_LEFT_DELETE = "Selected aura:"
@@ -118,6 +120,12 @@
 	VCB_COMMON_BUTTON_INVERT_ORIENTATION_TOOLTIP = "Check this to invert the aura orientation. Meaning that the buffs are oriented on the left side instead of the right etc."
 	VCB_COMMON_BUTTON_CUSTOMFONT = "Custom Font"
 	VCB_COMMON_BUTTON_CUSTOMFONT_TOOLTIP = "Use the a custom font instead of the provided ones."
+	VCB_WP_FRAME_SHOW_MISSING = "Show missing"
+	VCB_WP_FRAME_SHOW_MISSING_TOOLTIP = "Keeps a weapon's icon, tinted red, when it has no poison or stone on it."
+	VCB_COMBAT_FRAME_SHOW_MISSING = "Show missing"
+	VCB_COMBAT_FRAME_SHOW_MISSING_TOOLTIP = "Keeps a combat frame buff's slot, tinted red, while it is not up."
+	VCB_COMBAT_FRAME_HIDE_OOC = "Hide out of combat"
+	VCB_COMBAT_FRAME_HIDE_OOC_TOOLTIP = "Shows the combat frame only while you are in combat."
 	
 	VCB_COMMON_BUTTON_LOAD_TEXT = "Load"
 	
@@ -221,6 +229,11 @@
 	VCB_ABILITY_LOWER_SCRIPT_19 = "prayer of spirit"
 	VCB_ABILITY_LOWER_SCRIPT_20 = "shadow protection"
 	VCB_ABILITY_LOWER_SCRIPT_21 = "prayer of shadow protection"
+	VCB_GROUP_AURAS = {
+		{class = "PALADIN", icon = "Spell_Holy_DevotionAura", auras = {"devotion aura", "retribution aura", "concentration aura", "sanctity aura", "shadow resistance aura", "frost resistance aura", "fire resistance aura"}},
+		{class = "HUNTER", icon = "Ability_TrueShot", auras = {"trueshot aura"}},
+		{class = "DRUID", icon = "Spell_Nature_UnyeildingStamina", auras = {"leader of the pack", "moonkin aura"}},
+	}
 	VCB_TIMER_FRAME_SHOW_DISABLEUNIT_TOOLTIP = "Check this to remove the unit of the timer. (i.e. m/s/h)."
 	VCB_TIMER_FRAME_SHOW_DISABLEUNIT = "Remove unit"
 	

@@ -598,6 +598,7 @@ function VCB_OnEvent(event)
 		end
 		
 		VCB_INITIALIZE()
+		VCB_BF_CombatFrame_Init()
 		VCB_BF_Lock(VCB_BF_LOCKED)
 		
 		VCB_BF_WEAPON_BUTTON_OnEvent(false)
@@ -616,6 +617,7 @@ function VCB_OnEvent(event)
 		end
 	elseif (event == "PLAYER_ENTERING_WORLD") and VCB_IS_LOADED then
 		VCB_BF_WEAPON_BUTTON_OnEvent(false)
+		VCB_BF_CombatFrame_Init()
 		if (VCB_SAVE["BF_POS"] and VCB_SAVE["BF_POS"][1]) then
 			VCB_BF_BUFF_FRAME:ClearAllPoints()
 			VCB_BF_BUFF_FRAME:SetPoint(VCB_SAVE["BF_POS"][1], UIParent, VCB_SAVE["BF_POS"][1], VCB_SAVE["BF_POS"][2], VCB_SAVE["BF_POS"][3])
@@ -638,6 +640,7 @@ function VCB_SAVEFRAMEPOS()
 	VCB_SAVE["DBF_POS"][1] = point;
 	VCB_SAVE["DBF_POS"][2] = xOfs;
 	VCB_SAVE["DBF_POS"][3] = yOfs;
+	VCB_BF_CombatFrame_SavePos()
 	if not VCB_SAVE["CF_icon_attach"] then
 		point, _, _, xOfs, yOfs = VCB_BF_CONSOLIDATED_ICON:GetPoint()
 		VCB_ICON_POINT = point
@@ -873,7 +876,28 @@ function VCB_INITIALIZE()
 end
 
 function VCB_SlashCommandHandler(msg)
-	if(msg) then
+	local _, _, cmd, sub, arg = string.find(msg or "", "^%s*(%S*)%s*(%S*)%s*(.-)%s*$")
+	cmd, sub = strlower(cmd or ""), strlower(sub or "")
+	if cmd == "combat" then
+		if sub == "add" and arg ~= "" then
+			VCB_BF_CombatAdd(arg)
+		elseif sub == "remove" and arg ~= "" then
+			VCB_BF_CombatRemove(arg)
+		elseif sub == "clear" then
+			VCB_BF_CombatClear()
+		elseif sub == "scale" then
+			VCB_BF_CombatScale(arg)
+		else
+			VCB_BF_CombatList()
+		end
+	elseif cmd == "help" then
+		VCB_SendMessage("/vcb - open the options")
+		VCB_SendMessage("/vcb combat add <buff> - show a buff in the combat frame")
+		VCB_SendMessage("/vcb combat remove <buff> - remove a buff from the combat frame")
+		VCB_SendMessage("/vcb combat - list combat frame buffs")
+		VCB_SendMessage("/vcb combat clear - empty the combat frame")
+		VCB_SendMessage("/vcb combat scale <0.5-3> - resize the combat frame")
+	else
 		VCB_BF_ConfigFrame:Show()
 	end
 end
@@ -929,6 +953,7 @@ end
 function VCB_OPTIONS_HIDE_ALL()
 	getglobal("VCB_BF_CONSOLIDATED_FRAME"):Hide()
 	getglobal("VCB_BF_BANNED_FRAME"):Hide()
+	getglobal("VCB_BF_COMBATOPT_FRAME"):Hide()
 	getglobal("VCB_BF_TIMER_FRAME"):Hide()
 	getglobal("VCB_BF_CF_FRAME"):Hide()
 	getglobal("VCB_BF_CF_FRAME2"):Hide()
@@ -1205,6 +1230,7 @@ function VCB_PAGEINIT(frame)
 		getglobal("VCB_BF_WP_FRAME_CHECKBUTTON1"):SetChecked(VCB_SAVE["WP_GENERAL_verticalmode"])
 		getglobal("VCB_BF_WP_FRAME_CHECKBUTTON2"):SetChecked(VCB_SAVE["WP_GENERAL_enablebgcolor"])
 		getglobal("VCB_BF_WP_FRAME_CHECKBUTTON7"):SetChecked(VCB_SAVE["WP_GENERAL_attach"])
+		getglobal("VCB_BF_WP_FRAME_CHECKBUTTON_SHOWMISSING"):SetChecked(VCB_EXTRA["wp_showmissing"])
 		getglobal("VCB_BF_WP_FRAME_Color1NormalTexture"):SetVertexColor(VCB_SAVE["WP_GENERAL_bgcolor_r"], VCB_SAVE["WP_GENERAL_bgcolor_g"], VCB_SAVE["WP_GENERAL_bgcolor_b"])
 		getglobal("VCB_BF_WP_FRAME_Color1_SwatchBg").r = VCB_SAVE["WP_GENERAL_bgcolor_r"]
 		getglobal("VCB_BF_WP_FRAME_Color1_SwatchBg").g = VCB_SAVE["WP_GENERAL_bgcolor_g"]
@@ -1261,7 +1287,27 @@ function VCB_PAGEINIT(frame)
 		getglobal("VCB_BF_MISC_FRAME_CHECKBUTTON2"):SetChecked(VCB_SAVE["MISC_disable_BB"])
 	elseif frame == "VCB_BF_PM_FRAME" then
 		getglobal("VCB_BF_PM_FRAME_LEFT_CURRENT_INBOX_TEXT"):SetText(VCB_CUR_PROFILE)
+	elseif frame == "VCB_BF_COMBATOPT_FRAME" then
+		getglobal("VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_SHOWMISSING"):SetChecked(VCB_EXTRA["combat_showmissing"])
+		getglobal("VCB_BF_COMBATOPT_FRAME_CHECKBUTTON_HIDEOOC"):SetChecked(VCB_EXTRA["combat_hideooc"])
+		getglobal("VCB_BF_COMBATOPT_FRAME_ScaleSlider"):SetValue(VCB_EXTRA["combat_scale"])
+		getglobal("VCB_BF_COMBATOPT_FRAME_ScaleSliderText"):SetText(VCB_COMMON_SLIDER_SCALE..": "..VCB_EXTRA["combat_scale"])
 	end
+end
+
+function VCB_BF_COMBAT_HIDEOOC_CLICK()
+	VCB_EXTRA["combat_hideooc"] = not VCB_EXTRA["combat_hideooc"]
+	VCB_BF_CombatFrame_UpdateVisibility()
+end
+
+function VCB_BF_COMBAT_SHOWMISSING_CLICK()
+	VCB_EXTRA["combat_showmissing"] = not VCB_EXTRA["combat_showmissing"]
+	VCB_BF_RepositionCombat()
+end
+
+function VCB_BF_WP_SHOWMISSING_CLICK()
+	VCB_EXTRA["wp_showmissing"] = not VCB_EXTRA["wp_showmissing"]
+	VCB_BF_WEAPON_BUTTON_OnEvent(true)
 end
 
 function VCB_BF_CHECKBUTTON(obj)
@@ -1621,6 +1667,54 @@ end
 function VCB_BANNED_BUFFS_REMOVE_ALL()
 	VCB_BF_RemoveAllFromBanned()
 	VCB_BF_BANNED_FRAME_RIGHT_SCROLLFRAME_Update()
+end
+
+function VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+	local FRAME = getglobal("VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME")
+	FauxScrollFrame_Update(FRAME,table.getn(VCB_COMBAT_BUFFS),10,40)
+	for line=1,10 do
+		local lineplusoffset = line + FauxScrollFrame_GetOffset(FRAME)
+		if VCB_COMBAT_BUFFS[lineplusoffset] ~= nil then
+			getglobal("VCB_COMBAT_LIST_ENTRY_TEXT"..line):SetText(lineplusoffset..". "..VCB_COMBAT_BUFFS[lineplusoffset])
+			getglobal("VCB_COMBAT_LIST_ENTRY"..line).buff = VCB_COMBAT_BUFFS[lineplusoffset]
+			getglobal("VCB_COMBAT_LIST_ENTRY"..line):Show()
+		else
+			getglobal("VCB_COMBAT_LIST_ENTRY"..line):Hide()
+		end
+	end
+end
+
+function VCB_COMBAT_SCROLLFRAME_ENTRY(button)
+	getglobal("VCB_BF_COMBATOPT_FRAME_LEFT_DELETE_INBOX_TEXT"):SetText(button.buff)
+end
+
+function VCB_COMBAT_LIST_ADD()
+	local name = getglobal("VCB_BF_COMBATOPT_FRAME_EditBox"):GetText()
+	if name and name ~= "" then
+		VCB_BF_CombatAdd(name)
+		getglobal("VCB_BF_COMBATOPT_FRAME_EditBox"):SetText("")
+	end
+	VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+end
+
+function VCB_COMBAT_LIST_DELETE()
+	local name = getglobal("VCB_BF_COMBATOPT_FRAME_LEFT_DELETE_INBOX_TEXT"):GetText()
+	if name and name ~= "" then
+		VCB_BF_CombatRemove(name)
+		getglobal("VCB_BF_COMBATOPT_FRAME_LEFT_DELETE_INBOX_TEXT"):SetText("")
+	end
+	VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+end
+
+function VCB_COMBAT_LIST_REMOVE_ALL()
+	VCB_BF_CombatClear()
+	VCB_BF_COMBATOPT_FRAME_RIGHT_SCROLLFRAME_Update()
+end
+
+function VCB_BF_COMBATOPT_FRAME_ScaleSliderChange(obj)
+	VCB_EXTRA["combat_scale"] = tonumber(string.format("%.1f", obj:GetValue()))
+	getglobal(obj:GetName().."Text"):SetText(VCB_COMMON_SLIDER_SCALE..": "..VCB_EXTRA["combat_scale"])
+	VCB_BF_COMBAT_FRAME:SetScale(VCB_EXTRA["combat_scale"])
 end
 
 ---------------------------------------END BANNED BUFFS FRAME-----------------------------------------------------------------------------------------------------------------

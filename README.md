@@ -49,6 +49,11 @@ Vanilla Consolidate Buff-Frames (VCB) is a smart system to manage your auras. Th
 
 ```
 
+**v3.2:**
+-Fixed timer text: minutes and seconds are now zero-padded (1:05, not 1:5), no more negative seconds when rounding up, and hours show the right minutes (timer rewrite from Utensile/VCB0)
+-Fixed rounding up rounding the minutes instead of the seconds (90 s showed as 2:30)
+-Fixed minutes:seconds over an hour being labeled "h"
+
 **v3.1:**
 -Added the Combat Frame: a separate frame for specific buffs you want to track closely
 -Added Combat Frame options: buff list, show missing buffs, hide out of combat, scale

@@ -1331,90 +1331,77 @@ end
 
 function VCB_BF_GetDuration(timeLeft)
 	if VCB_IS_LOADED then
-		-- 1. Setup Suffixes
 		local suffix = { [1] = " s", [2] = " m", [3] = " h" }
 		if VCB_SAVE["Timer_disableUnit"] then
 			suffix = { [1] = "", [2] = "", [3] = "" }
 		end
 
-		-- 2. Helper for Rounding (Up/Down) based on settings
-		local function getVal(val)
-			if VCB_SAVE["Timer_round"] then 
-				return math.ceil(val) 
-			else 
-				return math.floor(val) 
+		-- Rounds to whole units (up or down, per settings). Always applied to the smallest unit shown,
+		-- before splitting into h/m/s, so 90 s rounded up is 1:30, not 2:30.
+		local function round(value)
+			if VCB_SAVE["Timer_round"] then
+				return math.ceil(value)
+			else
+				return math.floor(value)
 			end
 		end
 
-		-- 3. Logic
 		if VCB_SAVE["Timer_minutes"] and timeLeft > 60 then
-			-- TIME > 1 MINUTE
-			
 			if VCB_SAVE["Timer_hours"] and timeLeft > 3600 then
-				-- TIME > 1 HOUR
-				local h = getVal(timeLeft / 3600)
-				local m = math.floor(math.mod(timeLeft, 3600) / 60)
-				local s = math.mod(timeLeft, 60)
-
-				if VCB_SAVE["Timer_hours_convert"] then
-					if VCB_SAVE["Timer_minutes_convert"] then
-						-- Format: H:MM:SS
-						return string.format("%d:%02d:%02d%s", h, m, s, suffix[3])
-					else
-						-- Format: H:MM
-						return string.format("%d:%02d%s", h, m, suffix[3])
-					end
+				if VCB_SAVE["Timer_hours_convert"] and VCB_SAVE["Timer_minutes_convert"] then
+					-- H:MM:SS
+					local total = round(timeLeft)
+					return string.format("%d:%02d:%02d%s", math.floor(total / 3600), math.floor(math.mod(total, 3600) / 60), math.mod(total, 60), suffix[3])
+				elseif VCB_SAVE["Timer_hours_convert"] then
+					-- H:MM
+					local total = round(timeLeft / 60)
+					return string.format("%d:%02d%s", math.floor(total / 60), math.mod(total, 60), suffix[3])
+				elseif VCB_SAVE["Timer_minutes_convert"] then
+					-- M:SS, minutes past 60
+					local total = round(timeLeft)
+					return string.format("%d:%02d%s", math.floor(total / 60), math.mod(total, 60), suffix[2])
 				else
-					if VCB_SAVE["Timer_minutes_convert"] then
-						-- Format: MM:SS (Total minutes)
-						local totalMin = getVal(timeLeft / 60)
-						s = math.mod(timeLeft, 60)
-						return string.format("%d:%02d%s", totalMin, s, suffix[3])
-					else
-						-- Format: H (Just hours)
-						return h..suffix[3]
-					end
+					-- H
+					return round(timeLeft / 3600)..suffix[3]
 				end
 			else
-				-- TIME < 1 HOUR (But > 60s)
-				local m = getVal(timeLeft / 60)
-				local s = math.mod(timeLeft, 60)
-
 				if VCB_SAVE["Timer_minutes_convert"] then
+					local total = round(timeLeft)
 					if VCB_SAVE["Timer_hours_convert"] then
-						-- Format: 0:MM:SS (Ghost Hour)
-						return string.format("0:%02d:%02d%s", m, s, suffix[3])
+						-- 0:MM:SS
+						return string.format("0:%02d:%02d%s", math.floor(total / 60), math.mod(total, 60), suffix[3])
 					else
-						-- Format: M:SS
-						return string.format("%d:%02d%s", m, s, suffix[2])
+						-- M:SS
+						return string.format("%d:%02d%s", math.floor(total / 60), math.mod(total, 60), suffix[2])
 					end
 				else
+					local minutes = round(timeLeft / 60)
 					if VCB_SAVE["Timer_hours_convert"] then
-						-- Format: 0:MM (Ghost Hour)
-						return string.format("0:%02d%s", m, suffix[3])
+						-- 0:MM
+						return string.format("0:%02d%s", minutes, suffix[3])
 					else
-						-- Format: M (Just minutes)
-						return m..suffix[2]
+						-- M
+						return minutes..suffix[2]
 					end
 				end
 			end
 		else
-			-- TIME < 60 SECONDS
-			local s = timeLeft
-			
 			if VCB_SAVE["Timer_minutes_convert"] then
-				-- Format: 0:SS
 				if VCB_SAVE["Timer_tenth"] then
-					return string.format("0:%04.1f%s", s, suffix[2]) -- 0:05.5
+					-- 0:SS.s
+					return string.format("0:%04.1f%s", timeLeft, suffix[2])
 				else
-					return string.format("0:%02d%s", s, suffix[2])   -- 0:05
+					-- 0:SS (1:00 when 59.x is rounded up)
+					local total = round(timeLeft)
+					return string.format("%d:%02d%s", math.floor(total / 60), math.mod(total, 60), suffix[2])
 				end
 			else
-				-- Format: SS (Just seconds)
 				if VCB_SAVE["Timer_tenth"] then
-					return string.format("%.1f%s", s, suffix[1])
+					-- SS.s
+					return string.format("%.1f%s", timeLeft, suffix[1])
 				else
-					return getVal(s)..suffix[1]
+					-- SS
+					return round(timeLeft)..suffix[1]
 				end
 			end
 		end
